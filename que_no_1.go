@@ -1,28 +1,61 @@
-// Q1. A) Write a program in GO language to print a recursive sum of digits
-// of a given number
+// Q1. A) Write a program in GO language to create an interface and display
+// its values with the help of type assertion.
 
 package main
 
-import (
-	"fmt"
-)
+import "fmt"
 
-// Function to calculate the sum of digits recursively
-func recursiveSumOfDigits(num int) int {
-	if num == 0 {
-		return 0
-	}
-	return num%10 + recursiveSumOfDigits(num/10)
+// Define an interface named MyInterface
+type MyInterface interface {
+	display()
+}
+
+// Define a struct type implementing MyInterface
+type MyStruct struct {
+	Value string
+}
+
+// Implement the display method for MyStruct
+func (ms MyStruct) display() {
+	fmt.Printf("Value from MyStruct: %s\n", ms.Value)
+}
+
+// Define another struct type implementing MyInterface
+type AnotherStruct struct {
+	Number int
+}
+
+// Implement the display method for AnotherStruct
+func (as AnotherStruct) display() {
+	fmt.Printf("Number from AnotherStruct: %d\n", as.Number)
 }
 
 func main() {
-	var num int
-	fmt.Print("Enter a number: ")
-	fmt.Scan(&num)
+	// Create instances of MyStruct and AnotherStruct
+	myInstance := MyStruct{Value: "Hello, World!"}
+	anotherInstance := AnotherStruct{Number: 42}
 
-	// Calculate the recursive sum of digits
-	sum := recursiveSumOfDigits(num)
+	// Declare variables of type MyInterface
+	var interfaceVar MyInterface
 
-	// Display the result
-	fmt.Printf("Recursive Sum of Digits for %d: %d\n", num, sum)
+	// Assign MyStruct instance to MyInterface variable
+	interfaceVar = myInstance
+	displayWithTypeAssertion(interfaceVar)
+
+	// Assign AnotherStruct instance to MyInterface variable
+	interfaceVar = anotherInstance
+	displayWithTypeAssertion(interfaceVar)
+}
+
+// Function to display values with type assertion
+func displayWithTypeAssertion(i MyInterface) {
+	// Use type assertion to determine the underlying type
+	switch v := i.(type) {
+	case MyStruct:
+		v.display()
+	case AnotherStruct:
+		v.display()
+	default:
+		fmt.Println("Unknown type")
+	}
 }
