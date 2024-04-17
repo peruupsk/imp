@@ -1,97 +1,56 @@
-// B) Write a program in GO language using go routine and channel that
-// will print the sum of the squares and cubes of the individual digits
-// of a number. Example if number is 123 then
-// squares = (1 * 1) + (2 * 2) + (3 * 3)
-// cubes = (1 * 1 * 1) + (2 * 2 * 2) + (3 * 3 * 3).
+// B) Write a program in GO language to read and write Fibonacci
+// series to the using channel.
 
 package main
 
 import (
 	"fmt"
-	"strconv"
 	"sync"
 )
 
-func main() {
-	// Enter the number for which you want to calculate the sum of squares and cubes
-	number := 123
+// Function to generate Fibonacci series and write to channel
+func generateFibonacci(n int, ch chan<- int, wg *sync.WaitGroup) {
+	defer wg.Done()
 
-	// Create channels to store results
-	squaresCh := make(chan int)
-	cubesCh := make(chan int)
+	a, b := 0, 1
+	for i := 0; i < n; i++ {
+		ch <- a
+		a, b = b, a+b
+	}
+
+	close(ch)
+}
+
+// Function to read and print values from channel
+func readChannel(ch <-chan int, done chan<- bool) {
+	for num := range ch {
+		fmt.Print(num, " ")
+	}
+	done <- true
+}
+
+func main() {
+	// Create channels
+	fibonacciCh := make(chan int, 10) // buffered channel to store Fibonacci series
+	doneCh := make(chan bool)
 
 	// Use WaitGroup to wait for goroutines to finish
 	var wg sync.WaitGroup
 
-	// Start goroutines to calculate squares and cubes
-	wg.Add(2)
-	go calculateSquares(number, squaresCh, &wg)
-	go calculateCubes(number, cubesCh, &wg)
+	// Start goroutine to generate Fibonacci series
+	wg.Add(1)
+	go generateFibonacci(10, fibonacciCh, &wg)
 
-	// Use a separate WaitGroup to wait for closing channels after goroutines finish
-	var closeWG sync.WaitGroup
-	closeWG.Add(2)
+	// Start goroutine to read and print values from the channel
+	go readChannel(fibonacciCh, doneCh)
 
 	// Wait for both goroutines to finish
-	go func() {
-		wg.Wait()
-		close(squaresCh)
-		closeWG.Done()
-	}()
+	wg.Wait()
 
-	go func() {
-		closeWG.Wait()
-		close(cubesCh)
-	}()
+	// Close done channel after reading is done
+	close(doneCh)
 
-	// Retrieve results from channels
-	squares := <-squaresCh
-	cubes := <-cubesCh
-
-	// Print the results
-	fmt.Printf("Sum of squares: %d\n", squares)
-	fmt.Printf("Sum of cubes: %d\n", cubes)
+	// Wait for the readChannel goroutine to finish
+	<-doneCh
+	fmt.Println("\nFibonacci series generated and read successfully.")
 }
-
-// Function to calculate the sum of squares of individual digits
-func calculateSquares(num int, ch chan<- int, wg *sync.WaitGroup) {
-	defer wg.Done()
-
-	digits := getDigits(num)
-	sum := 0
-
-	for _, digit := range digits {
-		sum += digit * digit
-	}
-
-	ch <- sum
-}
-
-// Function to calculate the sum of cubes of individual digits
-func calculateCubes(num int, ch chan<- int, wg *sync.WaitGroup) {
-	defer wg.Done()
-
-	digits := getDigits(num)
-	sum := 0
-
-	for _, digit := range digits {
-		sum += digit * digit * digit
-	}
-
-	ch <- sum
-}
-
-// Function to get individual digits of a number
-func getDigits(num int) []int {
-	strNum := strconv.Itoa(num)
-	digits := make([]int, len(strNum))
-
-	for i, char := range strNum {
-		digit, _ := strconv.Atoi(string(char))
-		digits[i] = digit
-	}
-
-	return digits
-}
-
-
